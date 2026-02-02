@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>게시판 수정</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 200px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        button {
+            flex: 1;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-cancel {
+            background: #f5f5f5;
+            color: #666;
+        }
+
+        .btn-cancel:hover {
+            background: #e0e0e0;
+        }
+
+        .required {
+            color: #e74c3c;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            font-size: 13px;
+            margin-top: 6px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        input.error,
+        textarea.error {
+            border-color: #e74c3c;
+            background-color: #fff5f5;
+        }
+
+        input.error:focus,
+        textarea.error:focus {
+            border-color: #e74c3c;
+            box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
+        }
+
+        input.valid,
+        textarea.valid {
+            border-color: #27ae60;
+        }
+
+        input.valid:focus,
+        textarea.valid:focus {
+            border-color: #27ae60;
+            box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.1);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .no-data-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 게시글이 없는 경우 -->
+        <div th:if="${board == null}" class="no-data">
+            <div class="no-data-icon">📝</div>
+            <div>게시글을 찾을 수 없습니다.</div>
+            <a th:href="@{/board/list}" class="btn-cancel" style="margin-top: 20px; display: inline-block;">목록으로</a>
+        </div>
+
+        <!-- 수정 폼 -->
+        <div th:if="${board != null}">
+            <h1>게시판 수정</h1>
+            <form id="boardForm" th:action="@{/board/modify}" method="post">
+                <!-- 게시글 번호 (hidden) -->
+                <input type="text" name="boardNo" th:value="${board.boardNo}">
+                
+                <div class="form-group">
+                    <label for="boardTitle">제목 <span class="required">*</span></label>
+                    <input 
+                        type="text" 
+                        id="boardTitle" 
+                        name="boardTitle" 
+                        placeholder="제목을 입력하세요" 
+                        th:value="${board.boardTitle}"
+                        required
+                    >
+                    <div class="error-message" id="boardTitle-error"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="boardWriter">글쓴이 <span class="required">*</span></label>
+                    <input 
+                        type="text" 
+                        id="boardWriter" 
+                        name="boardWriter" 
+                        placeholder="글쓴이를 입력하세요" 
+                        th:value="${board.boardWriter}"
+                        required
+                    >
+                    <div class="error-message" id="boardWriter-error"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="boardContent">내용 <span class="required">*</span></label>
+                    <textarea 
+                        id="boardContent" 
+                        name="boardContent" 
+                        placeholder="내용을 입력하세요" 
+                        required
+                        th:text="${board.boardContent}"
+                    ></textarea>
+                    <div class="error-message" id="boardContent-error"></div>
+                </div>
+
+                <div class="button-group">
+                    <button type="submit" class="btn-submit" id="submitBtn">
+                        <span id="submitText">수정</span>
+                    </button>
+                    <button type="button" class="btn-cancel" th:onclick="'handleCancel(' + ${board.boardNo} + ')'">취소</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        // Validation 함수들
+        function validateField(fieldId, fieldName) {
+            const field = document.getElementById(fieldId);
+            const errorElement = document.getElementById(fieldId + '-error');
+            const value = field.value.trim();
+
+            // 빈 값 체크
+            if (!value || value.length === 0) {
+                showError(field, errorElement, fieldName + '을(를) 입력해주세요.');
+                return false;
+            }
+
+            // 공백만 있는 경우 체크
+            if (value.replace(/\s/g, '').length === 0) {
+                showError(field, errorElement, fieldName + '은(는) 공백만으로 입력할 수 없습니다.');
+                return false;
+            }
+
+            // 유효한 경우
+            showValid(field, errorElement);
+            return true;
+        }
+
+        function showError(field, errorElement, message) {
+            field.classList.remove('valid');
+            field.classList.add('error');
+            errorElement.textContent = message;
+            errorElement.classList.add('show');
+        }
+
+        function showValid(field, errorElement) {
+            field.classList.remove('error');
+            field.classList.add('valid');
+            errorElement.classList.remove('show');
+        }
+
+        // 모든 필드 validation 체크
+        function validateAllFields() {
+            const titleValid = validateField('boardTitle', '제목');
+            const writerValid = validateField('boardWriter', '글쓴이');
+            const contentValid = validateField('boardContent', '내용');
+
+            return titleValid && writerValid && contentValid;
+        }
+
+        // 실시간 validation 이벤트 리스너
+        document.addEventListener('DOMContentLoaded', function() {
+            const boardTitle = document.getElementById('boardTitle');
+            const boardWriter = document.getElementById('boardWriter');
+            const boardContent = document.getElementById('boardContent');
+
+            if (boardTitle) {
+                boardTitle.addEventListener('blur', function() {
+                    validateField('boardTitle', '제목');
+                });
+
+                boardTitle.addEventListener('input', function() {
+                    if (this.classList.contains('error')) {
+                        validateField('boardTitle', '제목');
+                    }
+                });
+            }
+
+            if (boardWriter) {
+                boardWriter.addEventListener('blur', function() {
+                    validateField('boardWriter', '글쓴이');
+                });
+
+                boardWriter.addEventListener('input', function() {
+                    if (this.classList.contains('error')) {
+                        validateField('boardWriter', '글쓴이');
+                    }
+                });
+            }
+
+            if (boardContent) {
+                boardContent.addEventListener('blur', function() {
+                    validateField('boardContent', '내용');
+                });
+
+                boardContent.addEventListener('input', function() {
+                    if (this.classList.contains('error')) {
+                        validateField('boardContent', '내용');
+                    }
+                });
+            }
+
+            // 폼 제출 이벤트
+            const boardForm = document.getElementById('boardForm');
+            if (boardForm) {
+                boardForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    // 모든 필드 validation 체크
+                    if (!validateAllFields()) {
+                        // 첫 번째 에러 필드로 포커스 이동
+                        const firstError = document.querySelector('.error');
+                        if (firstError) {
+                            firstError.focus();
+                        }
+                        return;
+                    }
+
+                    const boardTitle = document.getElementById('boardTitle').value.trim();
+                    const boardWriter = document.getElementById('boardWriter').value.trim();
+                    const boardContent = document.getElementById('boardContent').value.trim();
+                    const boardNo = document.querySelector('input[name="boardNo"]').value;
+
+                    // 최종 Not Null 체크 (이중 안전장치)
+                    if (!boardTitle || !boardWriter || !boardContent) {
+                        alert('모든 필드를 입력해주세요.');
+                        return;
+                    }
+
+                    // 제출 버튼 비활성화 및 로딩 표시
+                    const submitBtn = document.getElementById('submitBtn');
+                    const submitText = document.getElementById('submitText');
+                    submitBtn.disabled = true;
+                    submitText.innerHTML = '<span class="loading"></span>수정 중...';
+
+                    // 서버로 데이터 전송 (FormData 사용)
+                    try {
+                        const formData = new FormData();
+                        formData.append('boardNo', boardNo);
+                        formData.append('boardTitle', boardTitle);
+                        formData.append('boardWriter', boardWriter);
+                        formData.append('boardContent', boardContent);
+
+                        const response = await fetch(/*[[@{/board/modify}]]*/ '/board/modify', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        if (response.ok) {
+                            alert('게시글이 수정되었습니다.');
+                            window.location.href = /*[[@{/board/content(boardNo=${board.boardNo})}]]*/ '/board/read?id=' + boardNo;
+                        } else {
+                            alert('수정에 실패했습니다.');
+                            submitBtn.disabled = false;
+                            submitText.textContent = '수정';
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        alert('서버와 통신 중 오류가 발생했습니다.');
+                        submitBtn.disabled = false;
+                        submitText.textContent = '수정';
+                    }
+                });
+            }
+        });
+
+        function handleCancel(boardNo) {
+            if (confirm('작성 중인 내용이 사라집니다. 정말 취소하시겠습니까?')) {
+                window.location.href = '/board/read?id=' + boardNo;
+            }
+        }
+    </script>
+</body>
+</html>
